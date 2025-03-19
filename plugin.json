@@ -1,4 +1,8 @@
 {
-    "name": "GBC",
-    "description": "This plugin limits the intaraction that the user can have to the LLM, only messages regarding breaking a goal into small achivable tasks are allowed"
+    "name": "Goal Breakdown Component",
+    "description": "A plugin to break down learning goals into manageable tasks",
+    "author": "Francesco Murgioni",
+    "version": "1.0.0",
+    "entry_point": "gdc.py",
+    "dependencies": []
 }
