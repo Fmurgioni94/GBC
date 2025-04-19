@@ -543,4 +543,221 @@ This implementation ensures:
 - Clean JSON processing
 - Proper integration with Cheshire Cat's LLM
 - Consistent message formatting
-- Reliable task breakdown generation 
+- Reliable task breakdown generation
+
+## Testing Strategy
+
+The GBC plugin implements a comprehensive testing strategy covering unit tests, integration tests, and usage testing. Here's how to perform effective testing:
+
+### Unit Testing
+
+1. **Test Setup**
+```python
+# tests/test_gdc.py
+import pytest
+from gdc import break_down_task, process_json_message, clearing_input
+
+@pytest.fixture
+def sample_input():
+    return {
+        "message": "I want to learn Python",
+        "preferences": {
+            "learningStyle": "visual",
+            "preferredComplexity": "medium",
+            "motivation": "high",
+            "priorExperience": "beginner",
+            "additionalNotes": ""
+        }
+    }
+```
+
+2. **Test Cases**
+```python
+def test_break_down_task_valid_input(sample_input):
+    """Test task breakdown with valid input"""
+    result = break_down_task(json.dumps(sample_input))
+    assert isinstance(result, dict)
+    assert "tasks" in result
+    assert all(key in result["tasks"] for key in ["name", "duration", "description"])
+
+def test_process_json_message_invalid_input():
+    """Test processing of invalid JSON input"""
+    result = process_json_message("invalid json")
+    assert result == "invalid json"
+
+def test_clearing_input_malformed_json():
+    """Test handling of malformed JSON"""
+    result = clearing_input("invalid json")
+    assert result == {}
+```
+
+3. **Running Unit Tests**
+```bash
+# Run all tests
+pytest tests/
+
+# Run specific test file
+pytest tests/test_gdc.py
+
+# Run with coverage report
+pytest --cov=gdc tests/
+```
+
+### Integration Testing
+
+1. **Test Environment Setup**
+```python
+# tests/integration/test_integration.py
+from cat import CheshireCat
+import pytest
+
+@pytest.fixture
+def cat_instance():
+    return CheshireCat()
+
+def test_plugin_initialization(cat_instance):
+    """Test plugin initialization and registration"""
+    assert "GBC" in cat_instance.plugins
+    assert hasattr(cat_instance.plugins["GBC"], "break_down_task")
+```
+
+2. **End-to-End Testing**
+```python
+def test_complete_workflow(cat_instance, sample_input):
+    """Test complete plugin workflow"""
+    # Test message processing
+    result = cat_instance.process_message(json.dumps(sample_input))
+    assert isinstance(result, dict)
+    
+    # Test task generation
+    tasks = result.get("tasks", [])
+    assert len(tasks) > 0
+    
+    # Test task structure
+    for task in tasks:
+        assert all(key in task for key in ["name", "duration", "description"])
+```
+
+3. **Running Integration Tests**
+```bash
+# Run integration tests
+pytest tests/integration/
+
+# Run with detailed output
+pytest -v tests/integration/
+```
+
+### Usage Testing
+
+1. **Manual Testing Checklist**
+- [ ] Plugin loads correctly in Cheshire Cat
+- [ ] Basic goal breakdown works
+- [ ] User preferences are properly considered
+- [ ] Error handling works as expected
+- [ ] Output formatting is correct
+- [ ] Performance is acceptable
+
+2. **Test Scenarios**
+```python
+# Example test scenarios
+test_scenarios = [
+    {
+        "input": "I want to learn Python",
+        "expected": "tasks with Python learning steps"
+    },
+    {
+        "input": "What's the weather?",
+        "expected": "unbreakable goal response"
+    },
+    {
+        "input": "I want to become a software engineer",
+        "expected": "comprehensive career path breakdown"
+    }
+]
+```
+
+3. **Performance Testing**
+```python
+def test_performance(cat_instance):
+    """Test plugin performance"""
+    import time
+    
+    start_time = time.time()
+    for _ in range(10):
+        cat_instance.process_message("I want to learn Python")
+    end_time = time.time()
+    
+    assert (end_time - start_time) < 5.0  # Should complete within 5 seconds
+```
+
+### Best Practices
+
+1. **Test Organization**
+- Keep tests in a dedicated `tests` directory
+- Separate unit, integration, and usage tests
+- Use descriptive test names
+- Include docstrings for test functions
+
+2. **Test Coverage**
+- Aim for >80% code coverage
+- Test edge cases and error conditions
+- Include both positive and negative test cases
+- Test all user preference combinations
+
+3. **Continuous Integration**
+```yaml
+# .github/workflows/tests.yml
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      - name: Run tests
+        run: |
+          pytest --cov=gdc tests/
+```
+
+4. **Test Maintenance**
+- Update tests when adding new features
+- Review test coverage regularly
+- Remove obsolete tests
+- Keep test data up to date
+
+### Debugging Tips
+
+1. **Common Issues**
+- JSON parsing errors
+- LLM response formatting
+- Task dependency cycles
+- Performance bottlenecks
+
+2. **Debugging Tools**
+```python
+# Enable debug logging
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Add debug prints
+def break_down_task(user_message_json: str, cat):
+    logging.debug(f"Processing message: {user_message_json}")
+    # ... rest of implementation
+```
+
+3. **Troubleshooting Steps**
+- Check input format
+- Verify LLM responses
+- Monitor memory usage
+- Review error logs
+
+## License
+
+This plugin is licensed under the same terms as the Cheshire Cat AI project. 
